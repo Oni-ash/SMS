@@ -1,0 +1,111 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  FACULTY
+  STUDENT
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role
+  avatar    String?
+  createdAt DateTime @default(now())
+
+  student   Student?
+  faculty   Faculty?
+}
+
+model Student {
+  id       Int     @id @default(autoincrement())
+  user     User    @relation(fields: [userId], references: [id])
+  userId   Int     @unique
+  rollNo   String  @unique
+  enrolls  Enrollment[]
+  attend   Attendance[]
+  results  Result[]
+  fees     FeeTransaction[]
+}
+
+model Faculty {
+  id      Int     @id @default(autoincrement())
+  user    User    @relation(fields: [userId], references: [id])
+  userId  Int     @unique
+  courses Course[]
+}
+
+model Course {
+  id          Int          @id @default(autoincrement())
+  code        String       @unique
+  title       String
+  facultyId   Int?
+  faculty     Faculty?     @relation(fields: [facultyId], references: [id])
+  enrolls     Enrollment[]
+  attendance  Attendance[]
+  exams       Exam[]
+}
+
+model Enrollment {
+  id        Int     @id @default(autoincrement())
+  course    Course  @relation(fields: [courseId], references: [id])
+  courseId  Int
+  student   Student @relation(fields: [studentId], references: [id])
+  studentId Int
+  enrolledAt DateTime @default(now())
+
+  @@unique([courseId, studentId])
+}
+
+model Attendance {
+  id         Int      @id @default(autoincrement())
+  student    Student  @relation(fields: [studentId], references: [id])
+  studentId  Int
+  course     Course   @relation(fields: [courseId], references: [id])
+  courseId   Int
+  date       DateTime
+  present    Boolean
+
+  @@unique([studentId, courseId, date])
+}
+
+model Exam {
+  id         Int     @id @default(autoincrement())
+  course     Course  @relation(fields: [courseId], references: [id])
+  courseId   Int
+  title      String
+  date       DateTime
+  results    Result[]
+}
+
+model Result {
+  id         Int     @id @default(autoincrement())
+  exam       Exam    @relation(fields: [examId], references: [id])
+  examId     Int
+  student    Student @relation(fields: [studentId], references: [id])
+  studentId  Int
+  marks      Float
+  grade      String?
+  createdAt  DateTime @default(now())
+}
+
+model FeeTransaction {
+  id         Int      @id @default(autoincrement())
+  student    Student  @relation(fields: [studentId], references: [id])
+  studentId  Int
+  amount     Int
+  currency   String   @default("INR")
+  paid       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  meta       Json?
+}

@@ -1,0 +1,36 @@
+
+version: "3.8"
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: ocms
+      POSTGRES_PASSWORD: ocms
+      POSTGRES_DB: ocmsdb
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend:
+    build: .
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: "postgresql://ocms:ocms@db:5432/ocmsdb"
+      PORT: 4000
+      JWT_SECRET: "replace_me_with_secure"
+    ports:
+      - "4000:4000"
+    volumes:
+      - .:/app
+    command: ["npm", "run", "dev"]
+
+  adminer:
+    image: adminer
+    ports:
+      - "8080:8080"
+
+volumes:
+  dbdata:
